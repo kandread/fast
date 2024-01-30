@@ -59,17 +59,19 @@ function initFlood(dem::Raster, obs::DataFrame)
         if obs.Water[c] == 1
             j = floor(Int, (ymax - obs.Lat[c]) / yres)
             i = floor(Int, (obs.Lon[c] - xmin) / xres)
-            push!(q, (i, j))
-            # FIXME: can we use 110 km to convert from 1°?
-            dj = floor(Int, (obs.Fminor[c] / 110000.) / yres)
-            di = floor(Int, (obs.Fmajor[c] / 110000.) / xres)
-            for k=-di:di
-                for l=-dj:dj
-                    ni = min(max(i+k, 1), nr)
-                    nj = min(max(j+l, 1), nc)
-                    # REVIEW: ellipsoid projection
-                    if !((ni, nj) in q) && (3/4) * (lons[i] - lons[ni])^2 + (lats[j] - lats[nj])^2 < 1
+            if i > 0 && i <= nr && j > 0 && j <= nc
+                push!(q, (i, j))
+                # FIXME: can we use 110 km to convert from 1°?
+                dj = floor(Int, (obs.Fminor[c] / 110000.) / yres)
+                di = floor(Int, (obs.Fmajor[c] / 110000.) / xres)
+                for k=-di:di
+                    for l=-dj:dj
+                        ni = min(max(i+k, 1), nr)
+                        nj = min(max(j+l, 1), nc)
+                        # REVIEW: ellipsoid projection
+                        if !((ni, nj) in q) && (3/4) * (lons[i] - lons[ni])^2 + (lats[j] - lats[nj])^2 < 1
                         push!(q, (ni, nj))
+                        end
                     end
                 end
             end
@@ -113,6 +115,7 @@ function bathtub(dem::Raster, obs::DataFrame)
             ci = collect(i1:i2)[n[1]]
             cj = collect(j1:j2)[n[2]]
         end
+        println(length(q))
     end
     Raster(out, dims(dem), missingval=0)
 end
