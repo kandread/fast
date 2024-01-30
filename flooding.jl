@@ -19,9 +19,8 @@ Estimated flooded area for Rongowai flight.
 - `dem`: Digital Elevation Model (DEM) raster
 
 """
-function flooded(filename::String, demfile::String)
+function flooded(filename::String, demfile::Raster)
     obs = readRongowai(filename)
-    dem = Raster(demfile, missingval=-9999)
     bufdist = 0.1 # distance to buffer bounding box for GNSS-R data
     minlat = minimum(obs.Lat) - bufdist
     maxlat = maximum(obs.Lat) + bufdist
@@ -30,7 +29,9 @@ function flooded(filename::String, demfile::String)
     # extract DEM region with Rongowai flight bounding box
     ndem = setmappedcrs(view(dem, X(minlon .. maxlon), Y(minlat .. maxlat)), EPSG(4326))
     flood = bathtub(ndem, obs)
-    write(replace(filename, ".txt" => ".tif"), flood, options=Dict("compress" => "LZW"))
+    if !isnothing(flood)
+        write(replace(filename, ".txt" => ".tif"), flood, options=Dict("compress" => "LZW"))
+    end
 end
 
 """
@@ -91,9 +92,10 @@ Run a bathtub model to generate flooded area.
 function bathtub(dem::Raster, obs::DataFrame)
     out = zeros(Int, size(dem))
     nr, nc = size(dem)
-    q = initFlood(dem, obs)
-    # iterate through queue and flood downstream pixels
-    while !isempty(q)
+    if nr > 0 && nc > 0
+        q = initFlood(dem, obs)
+        # iterate through queue and flood downstream pixels
+        while !isempty(q)
         i, j = pop!(q)
         out[i, j] = 1
         dh = 1.0
@@ -116,6 +118,10 @@ function bathtub(dem::Raster, obs::DataFrame)
             cj = collect(j1:j2)[n[2]]
         end
         println(length(q))
+        end
+        rout = Raster(out, dims(dem), missingval=0)
+    else
+        rout = nothing
     end
-    Raster(out, dims(dem), missingval=0)
+    rout
 end
