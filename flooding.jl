@@ -133,9 +133,14 @@ function bathtub(dem::Raster, obs::DataFrame)
                         end
                     end
                 end
-                i1, i2 = max(ci - 1, 1), min(ci + 1, nr)
-                j1, j2 = max(cj - 1, 1), min(cj + 1, nc)
-                dh = maximum(dem[ci, cj] .- dem[i1:i2, j1:j2])
+                i1, i2 = max(ci-1, 1), min(ci+1, nr)
+                j1, j2 = max(cj-1, 1), min(cj+1, nc)
+                dh_ = vec(dem[ci, cj] .- dem[i1:i2, j1:j2])
+                dh = maximum(dh_)
+                if sort(dh_, rev=true)[2] == 0.0
+                    dem[ci, cj] += 0.0001
+                    dh = maximum(dh_)
+                end
                 n = argmax(dem[ci, cj] .- dem[i1:i2, j1:j2])
                 ci = collect(i1:i2)[n[1]]
                 cj = collect(j1:j2)[n[2]]
