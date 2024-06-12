@@ -1,6 +1,7 @@
 using CSV, DataFrames, DataStructures
-using Rasters
-import ArchGDAL as AG
+using Rasters, ArchGDAL
+
+const AG = ArchGDAL
 
 """
 Read GNSS-R Rongowai observations from CSV `filename`.
@@ -42,7 +43,7 @@ function flooded(filename::String, demfile::Raster)
     minlon = minimum(obs.Lon) - bufdist
     maxlon = maximum(obs.Lon) + bufdist
     # extract DEM region with Rongowai flight bounding box
-    ndem = setmappedcrs(view(dem, X(minlon .. maxlon), Y(minlat .. maxlat)), EPSG(4326))
+    ndem = setmappedcrs(dem[X(minlon .. maxlon), Y(minlat .. maxlat)], EPSG(4326))
     flood = bathtub(ndem, obs)
     if !isnothing(flood)
         write(
@@ -110,7 +111,7 @@ Run a bathtub model to generate flooded area.
 
 """
 function bathtub(dem::Raster, obs::DataFrame)
-    out = zeros(Int, size(dem))
+    out = zeros(UInt8, size(dem))
     nr, nc = size(dem)
     if nr > 0 && nc > 0
         q = initFlood(dem, obs)
@@ -141,7 +142,7 @@ function bathtub(dem::Raster, obs::DataFrame)
             end
             println(length(q))
         end
-        rout = Raster(out, dims(dem), missingval = 0)
+        rout = Raster(out, dims(dem), missingval=255)
     else
         rout = nothing
     end
