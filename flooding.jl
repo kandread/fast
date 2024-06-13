@@ -35,7 +35,7 @@ Estimated flooded area for Rongowai flight.
 - `dem`: Digital Elevation Model (DEM) raster
 
 """
-function flooded(filename::String, demfile::Raster)
+function flooded(filename::String, dem::Raster)
     obs = readRongowai(filename)
     bufdist = 0.1 # distance to buffer bounding box for GNSS-R data
     minlat = minimum(obs.Lat) - bufdist
